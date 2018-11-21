@@ -3,14 +3,14 @@ clear;
 T=1000;
 LANDMARKS = 3;
 ts = 1:1:T;
-LS=[ 2 2; 0 2; -2 0];
+LS=[ 1 2; 0 -2; 2 0];
 
 x=zeros(6+2*LANDMARKS, T);
 z=zeros(3, T);
-x(:, 1) = [-1; 0; 0; 0; 0; 0; 1; 2; 0; 2; -2; 0];
+x(:, 1) = [0; 0; 0; 0; 0; 0; 1; 2; 0; -2; 2; 0];
 
-xreal= [sawtooth(ts*0.01) ; ts*0.01];
-cov=diag([ 0 0 0 0 0 0 1 2*zeros(1, 2*LANDMARKS-1)]);
+xreal= [ 1.5*ones(size(ts)) - 1.5*cos(0.1*ts) ; 1.5*sin(0.1*ts)];
+cov=diag([ 0 0 0 10 10 10 0 2*zeros(1, 2*LANDMARKS-1)]);
 
 F=eye(6+2*LANDMARKS);
 F(1,4)=1;
@@ -31,7 +31,7 @@ for t=2:1:T
    xp(7:6+2*LANDMARKS)=x(7:6+2*LANDMARKS,t-1);
    
    %Atualiza a matriz das covariancias
-   covp=F*cov*F'+diag([1 1 pi/10 1 1 1 0 0 0 0 0 0 ]);
+   covp=F*cov*F'+diag([1 1 pi/10 10 10 10 0 0 0 0 0 0 ]);
    
    
    
@@ -55,9 +55,19 @@ for t=2:1:T
    hold on;
    plot(x(1,t),x(2,t),'+');
    plot(xreal(1,t),xreal(2,t),'o');
+   plot(x(7,t),x(8,t),'o');
+   plot(x(9,t),x(10,t),'o');
+   plot(x(11,t),x(12,t),'o');
+   
+   
    plot(x(1,1:t),x(2,1:t),'r');
    plot(xreal(1,1:t),xreal(2,1:t),'y');
-   %axis([0 2 -1 1]);
-   pause(0.01);
+   legend('Posição atual (EKF)', 'Posiçao Real', 'Posição LM1', 'Posição LM2', 'Posição LM3', 'Trajeto (EKF)', 'Trajeto Real');
+   axis([-1 4 -2.5 2.5]);
+   grid on;
+   title('Espaço de Estados');
+   xlabel('X1');
+   ylabel('X2');
+   pause(0.1);
    clf;
 end
