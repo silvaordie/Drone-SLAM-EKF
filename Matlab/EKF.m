@@ -3,11 +3,11 @@ clear;
 T=500;
 LANDMARKS = 3;
 ts = 1:1:T;
-LS=[ 1 2; 0 -2; 2 0];
+LS=[ 1 0; 2 0.5; 2 -0.5];
 
 x=zeros(6+2*LANDMARKS, T);
 z=zeros(3, T);
-x(:, 1) = [0; 0; 0; 0; 0; 0; 1.3; 1.8; 0.1; -2.1; 2.1; 0.2];
+x(:, 1) = [0; 0; 0; 0; 0; 0; 1.1; 0.2; 2; 0.1; 2.1; -0.6];
 
 xreal= [ 1.5*ones(size(ts)) - 1.5*cos(0.1*ts) ; 1.5*sin(0.1*ts)];
 cov=diag([ 0 0 0 10 10 10 0.3*ones(1, 2*LANDMARKS)]);
@@ -44,8 +44,14 @@ for t=2:1:T
    K=covp*H(xp, LANDMARKS)'*inv(S);
    %Corrige a matriz das covariâncias
    cov=covp-K*S*K';
+   
    %Corrige a estimativa do vetor de estado
-   x(:,t)=xp'+K*(z(:,t)-hp(xp));   
+   %Inovation
+   
+   i=z(:,t)-hp(xp);
+   %Filtro de outliers
+   e=(abs(i)<0.3);
+   x(:,t)=xp'+(K*(e.*i));   
    %Filtro passa baixo para suavizar o sinal
    %x(1:3,t)=(xpre(1:3)+x(1:3,t-1))/2;
    %x(4:12,t)=xpre(4:12);
@@ -54,15 +60,19 @@ for t=2:1:T
    %% Grafismos
    clf;
    hold on;
+   plot(xreal(1,t),xreal(2,t),'+');
    plot(x(1,t),x(2,t),'+');
-   plot(xreal(1,t),xreal(2,t),'o');
    plot(x(7,t),x(8,t),'o');
    plot(x(9,t),x(10,t),'o');
-   plot(x(11,t),x(12,t),'o');
-   
+   plot(x(11,t),x(12,t),'o');   
    
    plot(x(1,1:t),x(2,1:t),'r');
-   plot(xreal(1,1:t),xreal(2,1:t),'y');
+   plot(xreal(1,1:t),xreal(2,1:t),'b');
+   
+   plot(LS(1,1),LS(1,2),'.');
+   plot(LS(2,1),LS(2,2),'.');
+   plot(LS(3,1),LS(3,2),'.');
+   
    legend('Posição atual (EKF)', 'Posiçao Real', 'Posição LM1', 'Posição LM2', 'Posição LM3', 'Trajeto (EKF)', 'Trajeto Real');
    axis([-3 7 -4 4]);
    grid on;

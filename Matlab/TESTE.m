@@ -1,13 +1,11 @@
+v=[1 1 0 ; 3 1 2];
+z=[1.1 0.9 1.03; 0.89 0.99 1.05; 1.11 1.15 0.9];
+
+[lm, e]=trilat(v,z)
+
 load matlab.mat;
 
-v=x(1:2, :);
-z=z(:, :);
-N=length(z);
-for k=1:1:(length(z)-1)
-        
-       A(k,:)=(2*(v(:,k)-v(:,N)))';
-       b(k,1)=-z(1,k)^2 + z(1,N)^2 + norm(v(:,k))^2 - norm(v(:,N))^2;
-        
-end
+v=x(1:2, 1:1:length(x));
+z=z(1, 1:1:length(z));
 
-lm=A\b
+[lm, e]=trilat(v,z)
