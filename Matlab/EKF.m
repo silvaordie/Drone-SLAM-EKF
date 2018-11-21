@@ -1,16 +1,16 @@
 clear;
 
-T=1000;
+T=500;
 LANDMARKS = 3;
 ts = 1:1:T;
 LS=[ 1 2; 0 -2; 2 0];
 
 x=zeros(6+2*LANDMARKS, T);
 z=zeros(3, T);
-x(:, 1) = [0; 0; 0; 0; 0; 0; 1; 2; 0; -2; 2; 0];
+x(:, 1) = [0; 0; 0; 0; 0; 0; 1.3; 1.8; 0.1; -2.1; 2.1; 0.2];
 
 xreal= [ 1.5*ones(size(ts)) - 1.5*cos(0.1*ts) ; 1.5*sin(0.1*ts)];
-cov=diag([ 0 0 0 10 10 10 0 2*zeros(1, 2*LANDMARKS-1)]);
+cov=diag([ 0 0 0 10 10 10 0.3*ones(1, 2*LANDMARKS)]);
 
 F=eye(6+2*LANDMARKS);
 F(1,4)=1;
@@ -52,6 +52,7 @@ for t=2:1:T
    
    
    %% Grafismos
+   clf;
    hold on;
    plot(x(1,t),x(2,t),'+');
    plot(xreal(1,t),xreal(2,t),'o');
@@ -63,11 +64,11 @@ for t=2:1:T
    plot(x(1,1:t),x(2,1:t),'r');
    plot(xreal(1,1:t),xreal(2,1:t),'y');
    legend('Posição atual (EKF)', 'Posiçao Real', 'Posição LM1', 'Posição LM2', 'Posição LM3', 'Trajeto (EKF)', 'Trajeto Real');
-   axis([-1 4 -2.5 2.5]);
+   axis([-3 7 -4 4]);
    grid on;
    title('Espaço de Estados');
    xlabel('X1');
    ylabel('X2');
    pause(0.1);
-   clf;
+   
 end
