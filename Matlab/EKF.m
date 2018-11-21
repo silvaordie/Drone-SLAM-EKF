@@ -3,11 +3,11 @@ clear;
 T=500;
 LANDMARKS = 3;
 ts = 1:1:T;
-LS=[ 1 0; 2 0.5; 2 -0.5];
+LS=[ 2 -2; 0 1; 3 1];
 
 x=zeros(6+2*LANDMARKS, T);
 z=zeros(3, T);
-x(:, 1) = [0; 0; 0; 0; 0; 0; 1.1; 0.2; 2; 0.1; 2.1; -0.6];
+x(:, 1) = [0; 0; 0; 0; 0; 0; 2.1; -2.2; 0; 1.1; 3.1; 1.2];
 
 xreal= [ 1.5*ones(size(ts)) - 1.5*cos(0.1*ts) ; 1.5*sin(0.1*ts)];
 cov=diag([ 0 0 0 10 10 10 0.3*ones(1, 2*LANDMARKS)]);
@@ -39,7 +39,7 @@ for t=2:1:T
    %Determina as dstâncias às landmarks (com erros maximos de 0.2)
    z(:,t)=obs(xreal(:,t)',LS);
    %Determina o S 
-   S=H(xp, LANDMARKS)*covp*H(xp, LANDMARKS)' + diag([0.04 0.04 0.04]);
+   S=H(xp, LANDMARKS)*covp*H(xp, LANDMARKS)' + diag([0.2 0.04 0.04]);
    %Calcula o ganho de Kalman
    K=covp*H(xp, LANDMARKS)'*inv(S);
    %Corrige a matriz das covariâncias
@@ -50,7 +50,7 @@ for t=2:1:T
    
    i=z(:,t)-hp(xp);
    %Filtro de outliers
-   e=(abs(i)<0.3);
+   e=(abs(i)<10);
    x(:,t)=xp'+(K*(e.*i));   
    %Filtro passa baixo para suavizar o sinal
    %x(1:3,t)=(xpre(1:3)+x(1:3,t-1))/2;
