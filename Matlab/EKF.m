@@ -79,6 +79,6 @@ for t=2:1:T
    title('Espaço de Estados');
    xlabel('X1');
    ylabel('X2');
-   pause(0.1);
+   pause(0.02);
    
 end
