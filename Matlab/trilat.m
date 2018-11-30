@@ -1,4 +1,4 @@
-function [lm, e]=trilat(v, z)
+function [lm, e]=trilat(v, z,dr)
 
     %Preenche A e b
     for k=1:1:(length(z)-1)        
@@ -8,7 +8,9 @@ function [lm, e]=trilat(v, z)
     
     %Ax-b=0, x=A^-1*b
     lm=-A\b;
-    
+    if(rank(A)==1)
+        lm(2,1)=sqrt(dr-lm(1,1)^2);
+    end
     %Calcula o maior desvio
     e=0;
     for k=1:1:length((z)-1)        
