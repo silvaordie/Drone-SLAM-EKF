@@ -1,36 +1,68 @@
 clear;
 
+%% Inicialização
+%Posição das landmarks
+%1- D 0
+%2- 0 0
+%3- ? ?
 LS=[ -2 0 -3 ; 0 0 4 ];
+
+%Posição inicial corresponde à 1ª landmark
 x(1:2,1)=[LS(:,1)];
+
+%Assume-se velocidade constante (A norma pode variar, a direção é que não)
 V=LS(:,2)-LS(:,1)/50;
+%Primeiras observações
 d(1,1)=0;
 d(2,1)=(x(1,1)-LS(1,2))^2+(x(2,1)-LS(2,2))^2 + 0.2*rand(1,1);
 d(3,1)=(x(1,1)-LS(1,3))^2+(x(2,1)-LS(2,3))^2 + 0.2*rand(1,1);
+
+%Simula o movimento
 for k=2:1:50
     x(:,k)=x(:,k-1)+V;
     d(1,k)=(x(1,k)-LS(1,1))^2+(x(2,k)-LS(2,1))^2 + 0.2*rand(1,1);
     d(2,k)=(x(1,k)-LS(1,2))^2+(x(2,k)-LS(2,2))^2 + 0.2*rand(1,1);
     d(3,k)=(x(1,k)-LS(1,3))^2+(x(2,k)-LS(2,3))^2 + 0.2*rand(1,1);
 end
+
+%Trajeto do veículo corresponde a um movimento rectilineo com y=0
+%A posição x do veiculo corresponde ao simétrico distância à 2ª landmark 
 v=[-d(2,:).^0.5;zeros(1,length(d(3,:)))];
+
 z=d(3,:);
+
+%Determina a posição da 3ª Landmark por trilateração
 [lm, e]=trilat(v, z, d(3,k-1));
+
 D=-sqrt(d(2,1));
-
 clear -lm -e -D
-
+%%Execução
+%Copa as landmarks
 LS=LS';
+%Define o 'tempo' de execução 
 T=500;
+%Número de Landmarks
 LANDMARKS = 3;
+%Simula a trajetória real
 ts = 1:1:T;
-
-x=zeros(6+2*LANDMARKS, T);
-z=zeros(3, T);
-x(:, 1) = [0; 0; 0; 0; 0; 0; D; 0; 0; 0; lm(1,1); lm(2,1)];
-
 xreal= [ -1.5*ones(size(ts)) + 1.5*cos(0.1*ts) ; 1.5*sin(0.1*ts)];
-cov=diag([ 0 0 0 0 0 0 e^2*ones(1, 2*LANDMARKS)]);
 
+%Vetor de estado ao longo do tempo
+x=zeros(6+2*LANDMARKS, T);
+%Vetor de observações ao longo do tempo
+z=zeros(3, T);
+
+%INICIALIZAÇÃO
+%Posição e velocidade do veículo a (0,0) e segunda landmark a (0,0)
+%Segunda Landmark Inicializada a (D,0)
+%Terceira Landmark inicializada com o resultado da trilateração
+x(:, 1) = [0; 0; 0; 0; 0; 0; D; 0; 0; 0; lm(1,1); lm(2,1)];
+%Varânicia da posiçao , velocidade do veículo e da segunda landmark é nula (assume-se que está 100% correta)
+%Variancia do x primeira landmark assume-se a variancia das medições
+%Variância da 3ª landmark corresponde ao maior desvio quadrático proveniente da trilateração
+cov=diag([ 0 0 0 0 0 0 0 0.04 0 0 e^2*ones(1, 2)]);
+
+%Matriz F
 F=eye(6+2*LANDMARKS);
 F(1,4)=1;
 F(2,5)=1;
@@ -50,7 +82,7 @@ for t=2:1:T
    xp(7:6+2*LANDMARKS)=x(7:6+2*LANDMARKS,t-1);
    
    %Atualiza a matriz das covariancias
-   covp=F*cov*F'+diag([1 1 pi/10 10 10 10 0 0 0 0 0 0 ]);
+   covp=F*cov*F'+diag([0.1 0.1 pi/10 0.1 0.10 0.10 0 0 0 0 0 0 ]);
    
    
    
