@@ -8,7 +8,7 @@ clear;
 LS=[ -2 0 -3 ; 0 0 4 ];
 
 %Posição inicial corresponde à 1ª landmark
-x(1:2,1)=[LS(:,1)];
+x(1:2,1)=LS(:,1);
 
 %Assume-se velocidade constante (A norma pode variar, a direção é que não)
 V=LS(:,2)-LS(:,1)/50;
@@ -43,12 +43,16 @@ LS=LS';
 T=500;
 %Número de Landmarks
 LANDMARKS = 3;
-SIZE=10+2*LANDMARKS;
+SIZE= 10+2*LANDMARKS;
+C=[0.1; 0.15];
 %Simula a trajetória real
 ts = 1:1:T;
-xreal= [ -1.5*ones(size(ts)) + 1.5*cos(0.1*ts) ; 1.5*sin(0.1*ts)];
-areal= [ (pi/(6*(T-1)))*ones(size(ts)) ; (pi/(T-1))*ones(size(ts)); zeros(1,length(ts)) ];
-angreal=cumsum(areal,2);
+%xreal= [ -1.5*ones(size(ts)) + 1.5*cos(0.1*ts) ; 1.5*sin(0.1*ts)];
+Freal=[-0.02*ones(size(ts)); 0.1*ones(size(ts)); zeros(size(ts))];
+areal(1,:)=C(1,1)*Freal(1,:);
+areal(2,:)=C(2,1)*Freal(2,:);
+vreal=cumsum(areal,2);
+xreal=cumsum(vreal,2);
 %Vetor de estado ao longo do tempo
 x=zeros(10+2*LANDMARKS, T);
 %Vetor de observações ao longo do tempo
@@ -68,6 +72,8 @@ cov=diag([ 0 0 0 0 0.04 0 0 0 e^2*ones(1, 2) 0 0 0 0 0 0]);
 F=eye(10+2*LANDMARKS);
 F(1,3)=1;
 F(2,4)=1;
+F(3,SIZE-2)=C(1);
+F(4,SIZE-1)=C(2);
 F(length(x(:, 1))-5,length(x(:, 1))-2)=1;
 F(length(x(:, 1))-4,length(x(:, 1))-1)=1;
 F(length(x(:, 1))-3,length(x(:, 1)))=1;
@@ -77,7 +83,7 @@ for t=2:1:T
    
    %% Prediction
    %Assume um valor de velocidades parecido ao do instante anterior
-   xp(3:4)=x(3:4,t-1);
+   xp(3:4)=x(3:4,t-1)+a(x(SIZE-5:SIZE-4,t-1),C);
    xp(SIZE-2:SIZE)=x(SIZE-2:SIZE,t-1);
    %Itera a posição com base na velocidade assumida
    xp(1:2)=x(1:2, t-1)+xp(3:4)';
@@ -92,9 +98,9 @@ for t=2:1:T
    
    %% Update
    %Determina as dstâncias às landmarks (com erros maximos de 0.2)
-   z(:,t)=obs(xreal(:,t)',LS, areal(:,k));
+   z(:,t)=obs(xreal(:,t)',LS, Freal(:,k));
    %Determina o S 
-   S=H(xp, LANDMARKS)*covp*H(xp, LANDMARKS)' + diag([0.04 0.04 0.04 0.1 0.1 0.1]);
+   S=H(xp, LANDMARKS)*covp*H(xp, LANDMARKS)' + diag([0.04 0.04 0.04 0 0 0]);
    %Calcula o ganho de Kalman
    K=covp*H(xp, LANDMARKS)'*inv(S);
    %Corrige a matriz das covariâncias
@@ -112,49 +118,29 @@ for t=2:1:T
    
    
    %% Grafismos
-   
-   ref_real=rotation(angreal(:,t));
-   ref_ekf=rotation(x(SIZE-5:SIZE-3,t));
-   
-   %% Posições
    figure(1);
+    hold on;
    clf;
    hold on;
-   plot(x(1,t),x(2,t),'+', 'MarkerEdgeColor', 'r');
-   plot(xreal(1,t),xreal(2,t),'+', 'MarkerEdgeColor', 'b');
-   plot(x(5,t),x(6,t),'o', 'MarkerEdgeColor', 'g');
-   plot(LS(1,1),LS(1,2),'+', 'MarkerEdgeColor', 'k');
-   plot(x(7,t),x(8,t),'o', 'MarkerEdgeColor', 'g');
-   plot(x(9,t),x(10,t),'o', 'MarkerEdgeColor', 'g');   
+   plot(xreal(1,t),xreal(2,t),'+');
+   plot(x(1,t),x(2,t),'+');
+   plot(x(5,t),x(6,t),'o');
+   plot(x(7,t),x(8,t),'o');
+   plot(x(9,t),x(10,t),'o');   
+   
    plot(x(1,1:t),x(2,1:t),'r');
    plot(xreal(1,1:t),xreal(2,1:t),'b');
-   plot(LS(2,1),LS(2,2),'+', 'MarkerEdgeColor', 'k');
-   plot(LS(3,1),LS(3,2),'+', 'MarkerEdgeColor', 'k');
    
-   legend('Posição atual (EKF)', 'Posiçao Real', 'Landmarks Estimadas', 'Landmarks Reais');
+   plot(LS(1,1),LS(1,2),'.');
+   plot(LS(2,1),LS(2,2),'.');
+   plot(LS(3,1),LS(3,2),'.');
+   
+   legend('Posição atual (EKF)', 'Posiçao Real', 'Posição LM1', 'Posição LM2', 'Posição LM3', 'Trajeto (EKF)', 'Trajeto Real');
    axis([-6 4 -4 4]);
    grid on;
    title('Espaço de Estados');
    xlabel('X1');
    ylabel('X2');
-   
-   %% Orientação
-   figure(2);
-   clf;
-   hold on
-   
-   title('Orientação do Drone')
-   quiver3(0,0,0,ref_real(1,1),ref_real(2,1),ref_real(3,1), 'b');
-   quiver3(0,0,0,ref_ekf(1,1),ref_ekf(2,1),ref_ekf(3,1), 'r');
-   quiver3(0,0,0,ref_real(1,2),ref_real(2,2),ref_real(3,2), 'b');
-   quiver3(0,0,0,ref_real(1,3),ref_real(2,3),ref_real(3,3), 'b');
-   quiver3(0,0,0,ref_ekf(1,2),ref_ekf(2,2),ref_ekf(3,2), 'r');
-   quiver3(0,0,0,ref_ekf(1,3),ref_ekf(2,3),ref_ekf(3,3), 'r');  
-   view(135,45);
-   
-   legend('Orientação real','Orientação estimada');
-   grid on;
-   set(gca,'XTick',[], 'YTick', [], 'ZTick', []);
    pause(0.02);
    
 end
