@@ -5,7 +5,7 @@ clear;
 %1- D 0
 %2- 0 0
 %3- ? ?
-LS=[ -2 0 -3 ; 0 0 4 ];
+LS=[ -2 0 -3 ; 0 0 1.5 ];
 
 %Posição inicial corresponde à 1ª landmark
 x(1:2,1)=[LS(:,1)];
@@ -49,7 +49,7 @@ ts = 1:1:T;
 xreal= [ -1.5*ones(size(ts)) + 1.5*cos(0.1*ts) ; 1.5*sin(0.1*ts)];
 areal= [ (pi/(6*(T-1)))*ones(size(ts)) ; (pi/(T-1))*ones(size(ts)); zeros(1,length(ts)) ];
 angreal=cumsum(areal,2);
-%Vetor de estado ao longo do tempo
+%Vetor de estado ao longo do tempo1
 x=zeros(10+2*LANDMARKS, T);
 %Vetor de observações ao longo do tempo
 z=zeros(3+LANDMARKS, T);
@@ -62,7 +62,7 @@ x(:, 1) = [0; 0; 0; 0; D; 0; 0; 0; lm(1,1); lm(2,1) ; 0 ; 0 ; 0 ; 0 ; 0 ; 0];
 %Varânicia da posiçao , velocidade do veículo e da segunda landmark é nula (assume-se que está 100% correta)
 %Variancia do x primeira landmark assume-se a variancia das medições
 %Variância da 3ª landmark corresponde ao maior desvio quadrático proveniente da trilateração
-cov=diag([ 0 0 0 0 0.04 0 0 0 e^2*ones(1, 2) 0 0 0 0 0 0]);
+cov=diag([ 0 0 0 0 0.04 0 0 0 e^2*ones(1, 2) 0 0 0 0.3 0.3 0.3]);
 
 %Matriz F
 F=eye(10+2*LANDMARKS);
@@ -86,7 +86,7 @@ for t=2:1:T
    xp(5:SIZE-6)=x(5:SIZE-6,t-1);
    
    %Atualiza a matriz das covariancias
-   covp=F*cov*F'+diag([0.1 0.1 0.1 0.1 0 0 0 0 0 0 pi/10 pi/10 pi/10 0.0001 0.0001 0.0001 ]);
+   covp=F*cov*F'+diag([0.1 0.1 0.1 0.1 0 0 0 0 0 0 pi/15 pi/15 pi/15 0.3 0.3 0.3]);
    
    
    
@@ -94,7 +94,7 @@ for t=2:1:T
    %Determina as dstâncias às landmarks (com erros maximos de 0.2)
    z(:,t)=obs(xreal(:,t)',LS, areal(:,k));
    %Determina o S 
-   S=H(xp, LANDMARKS)*covp*H(xp, LANDMARKS)' + diag([0.04 0.04 0.04 0.1 0.1 0.1]);
+   S=H(xp, LANDMARKS)*covp*H(xp, LANDMARKS)' + diag([0.2 0.2 0.2 0.01 0.01 0.01]);
    %Calcula o ganho de Kalman
    K=covp*H(xp, LANDMARKS)'*inv(S);
    %Corrige a matriz das covariâncias
@@ -132,9 +132,9 @@ for t=2:1:T
    plot(LS(3,1),LS(3,2),'+', 'MarkerEdgeColor', 'k');
    
    legend('Posição atual (EKF)', 'Posiçao Real', 'Landmarks Estimadas', 'Landmarks Reais');
-   axis([-6 4 -4 4]);
+   axis([-3.2 1 -2 2]);
    grid on;
-   title('Espaço de Estados');
+   title(['Espaço de Estados (t=' num2str(t) ')']);
    xlabel('X1');
    ylabel('X2');
    
@@ -143,18 +143,24 @@ for t=2:1:T
    clf;
    hold on
    
-   title('Orientação do Drone')
+   title(['Orientação do Drone (t=' num2str(t) ')'])
    quiver3(0,0,0,ref_real(1,1),ref_real(2,1),ref_real(3,1), 'b');
    quiver3(0,0,0,ref_ekf(1,1),ref_ekf(2,1),ref_ekf(3,1), 'r');
    quiver3(0,0,0,ref_real(1,2),ref_real(2,2),ref_real(3,2), 'b');
    quiver3(0,0,0,ref_real(1,3),ref_real(2,3),ref_real(3,3), 'b');
    quiver3(0,0,0,ref_ekf(1,2),ref_ekf(2,2),ref_ekf(3,2), 'r');
    quiver3(0,0,0,ref_ekf(1,3),ref_ekf(2,3),ref_ekf(3,3), 'r');  
+   text(ref_real(1,1),ref_real(2,1),ref_real(3,1), 'x');
+   text(ref_real(1,2),ref_real(2,2),ref_real(3,2), 'y');
+   text(ref_real(1,3),ref_real(2,3),ref_real(3,3), 'z');
+   text(ref_ekf(1,1),ref_ekf(2,1),ref_ekf(3,1), 'x"');
+   text(ref_ekf(1,2),ref_ekf(2,2),ref_ekf(3,2), 'y"');
+   text(ref_ekf(1,3),ref_ekf(2,3),ref_ekf(3,3), 'z"');
    view(135,45);
    
    legend('Orientação real','Orientação estimada');
    grid on;
    set(gca,'XTick',[], 'YTick', [], 'ZTick', []);
-   pause(0.02);
+   pause(0.0001);
    
 end

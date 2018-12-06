@@ -10,8 +10,8 @@ function [lm, e]=trilat(v, z,dr)
     lm=-A\b;
     lml=lm;
     if(rank(A)==1)
-        lm(2,1)=sqrt(dr-lm(1,1)^2);
-        lml(2,1)=-sqrt(dr-lm(1,1)^2);
+        lm(2,1)=sqrt(abs(dr-lm(1,1)^2));
+        lml(2,1)=-sqrt(abs(dr-lm(1,1)^2));
     end
     %Calcula o maior desvio
     e=0;
@@ -29,4 +29,6 @@ function [lm, e]=trilat(v, z,dr)
         lm=lml;
         e=el;
     end
+    
+
 end
