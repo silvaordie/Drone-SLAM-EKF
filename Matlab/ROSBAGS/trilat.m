@@ -25,7 +25,7 @@ function [lm, e]=trilat(v, z,dr)
        end       
     end
     
-    if(el<e)
+    if(0)
         lm=lml;
         e=el;
     end

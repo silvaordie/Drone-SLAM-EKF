@@ -5,8 +5,8 @@ clear;
 %1- D 0
 %2- 0 0
 %3- ? ?
-LS=[ -2 0 -3 ; 0 0 1.5 ];
-
+%LS=[ -2 0 -3 ; 0 0 1.5 ];
+LS=[ -2 0 -1 ; 0 0 1.5 ];
 %Posição inicial corresponde à 1ª landmark
 x(1:2,1)=[LS(:,1)];
 
@@ -40,14 +40,25 @@ clear -lm -e -D
 %Copa as landmarks
 LS=LS';
 %Define o 'tempo' de execução 
-T=500;
+
 %Número de Landmarks
 LANDMARKS = 3;
 SIZE=10+2*LANDMARKS;
 %Simula a trajetória real
+
+%T=200;
+%ts = 1:1:T;
+%xreal= [ -1.5*ones(size(ts)) + 1.5*cos(0.1*ts) ; 1.5*sin(0.1*ts)];
+
+%T=180;
+%xreal = [ 0*ones(1,20) , 0:0.05:1-0.05 , 0.95*ones(1,20) , 1-0.05:-0.05:0 , 0*ones(1,20), 0:0.05:1-0.05 , 0.95*ones(1,20) , 1-0.05:-0.05:0 , 0*ones(1,20) ; 0:0.05:1-0.05 , 0.95*ones(1,20) , 1-0.05:-0.05:0 , 0*ones(1,20) , 0:0.05:1-0.05 , 0.95*ones(1,20) , 1-0.05:-0.05:0 , 0*ones(1,20) , 0:0.05:1-0.05];
+%xreal=-xreal;
+
+T=100;
 ts = 1:1:T;
-xreal= [ -1.5*ones(size(ts)) + 1.5*cos(0.1*ts) ; 1.5*sin(0.1*ts)];
-areal= [ (pi/(6*(T-1)))*ones(size(ts)) ; (pi/(T-1))*ones(size(ts)); zeros(1,length(ts)) ];
+xreal = [ -1.5*ones(size(ts)) + 1.5*cos(0.1*ts) + 0.1*sin(0.8*ts) ; 1.5*sin(0.1*ts)+0.3*sin(0.4*ts)];
+
+areal= [ 0.1*sin(1/(T/2)*ts) ; 0.3*sin(1/(T/4)*ts) ; zeros(1,length(ts)) ];
 angreal=cumsum(areal,2);
 %Vetor de estado ao longo do tempo1
 x=zeros(10+2*LANDMARKS, T);
@@ -86,13 +97,13 @@ for t=2:1:T
    xp(5:SIZE-6)=x(5:SIZE-6,t-1);
    
    %Atualiza a matriz das covariancias
-   covp=F*cov*F'+diag([0.1 0.1 0.1 0.1 0 0 0 0 0 0 pi/15 pi/15 pi/15 0.3 0.3 0.3]);
+   covp=F*cov*F'+diag([0.01 0.01 0.1 0.1 0 0 0 0 0 0 pi/15 pi/15 pi/15 1 1 1]);
    
    
    
    %% Update
    %Determina as dstâncias às landmarks (com erros maximos de 0.2)
-   z(:,t)=obs(xreal(:,t)',LS, areal(:,k));
+   z(:,t)=obs(xreal(:,t)',LS, areal(:,t));
    %Determina o S 
    S=H(xp, LANDMARKS)*covp*H(xp, LANDMARKS)' + diag([0.2 0.2 0.2 0.01 0.01 0.01]);
    %Calcula o ganho de Kalman
@@ -120,21 +131,21 @@ for t=2:1:T
    figure(1);
    clf;
    hold on;
-   plot(x(1,t),x(2,t),'+', 'MarkerEdgeColor', 'r');
-   plot(xreal(1,t),xreal(2,t),'+', 'MarkerEdgeColor', 'b');
-   plot(x(5,t),x(6,t),'o', 'MarkerEdgeColor', 'g');
-   plot(LS(1,1),LS(1,2),'+', 'MarkerEdgeColor', 'k');
-   plot(x(7,t),x(8,t),'o', 'MarkerEdgeColor', 'g');
-   plot(x(9,t),x(10,t),'o', 'MarkerEdgeColor', 'g');   
-   plot(x(1,1:t),x(2,1:t),'r');
-   plot(xreal(1,1:t),xreal(2,1:t),'b');
-   plot(LS(2,1),LS(2,2),'+', 'MarkerEdgeColor', 'k');
-   plot(LS(3,1),LS(3,2),'+', 'MarkerEdgeColor', 'k');
+   plot(x(1,t),x(2,t),'*', 'MarkerEdgeColor', 'r', 'LineWidth', 2);
+   plot(xreal(1,t),xreal(2,t),'+', 'MarkerEdgeColor', 'b', 'LineWidth', 2);
+   plot(x(5,t),x(6,t),'o', 'MarkerEdgeColor', 'g', 'LineWidth', 2);
+   plot(LS(1,1),LS(1,2),'s', 'MarkerEdgeColor', 'k', 'LineWidth', 2);
+   plot(x(7,t),x(8,t),'o', 'MarkerEdgeColor', 'g', 'LineWidth', 2);
+   plot(x(9,t),x(10,t),'o', 'MarkerEdgeColor', 'g', 'LineWidth', 2);   
+   plot(x(1,1:t),x(2,1:t),'r', 'LineWidth', 2);
+   plot(xreal(1,1:t),xreal(2,1:t),'b', 'LineWidth', 2);
+   plot(LS(2,1),LS(2,2),'s', 'MarkerEdgeColor', 'k', 'LineWidth', 2);
+   plot(LS(3,1),LS(3,2),'s', 'MarkerEdgeColor', 'k', 'LineWidth', 2);
    
-   legend('Posição atual (EKF)', 'Posiçao Real', 'Landmarks Estimadas', 'Landmarks Reais');
+   legend('Current Estimate (EKF)', 'Actual Position', 'Estimated Landmarks', 'Actual Landmarks');
    axis([-3.2 1 -2 2]);
    grid on;
-   title(['Espaço de Estados (t=' num2str(t) ')']);
+   title(['State Space (t=' num2str(t) ')']);
    xlabel('X1');
    ylabel('X2');
    
@@ -143,7 +154,7 @@ for t=2:1:T
    clf;
    hold on
    
-   title(['Orientação do Drone (t=' num2str(t) ')'])
+   title(['Drone Orientation (t=' num2str(t) ')'])
    quiver3(0,0,0,ref_real(1,1),ref_real(2,1),ref_real(3,1), 'b');
    quiver3(0,0,0,ref_ekf(1,1),ref_ekf(2,1),ref_ekf(3,1), 'r');
    quiver3(0,0,0,ref_real(1,2),ref_real(2,2),ref_real(3,2), 'b');
@@ -158,7 +169,7 @@ for t=2:1:T
    text(ref_ekf(1,3),ref_ekf(2,3),ref_ekf(3,3), 'z"');
    view(135,45);
    
-   legend('Orientação real','Orientação estimada');
+   legend('Actual Orientation','Estimated Orientation');
    grid on;
    set(gca,'XTick',[], 'YTick', [], 'ZTick', []);
    pause(0.0001);

@@ -1,7 +1,7 @@
 function [distancia, variancia, v_ang] =  read_rosbag_data()
 %% read rosbag data
 %fid1 = fopen('topics.txt','r');
-fid1 = fopen('tag.txt','r');
+fid1 = fopen('7_aquis.txt','r');
 k = 1;
 while ~feof(fid1)
     line = fgets(fid1); 
