@@ -1,7 +1,7 @@
 clear;
 close all;
 
-[d, v_ang, var]=read_rosbag_data();
+[d, var, v_ang]=read_rosbag_data();
 d=abs(d);
 THRESHOLD=0.055;
 k=2;
@@ -93,15 +93,15 @@ for t=2:1:length(d)-tfinal
    xp(5:SIZE-6)=x(5:SIZE-6,t-1);
    
    %Atualiza a matriz das covariancias
-   covp=F*cov*F'+diag([0.1 0.1 0.01 0.01 0 0 0 0 0 0 pi/15 pi/15 pi/15 0.2 0.2 0.2]);
+   covp=F*cov*F'+diag([0.001 0.001 0.01 0.01 0 0 0 0 0 0 pi/15 pi/15 pi/15 0.2 0.2 0.2]);
    
    
    
    %% Update
    %Determina as dstâncias às landmarks (com erros maximos de 0.2)
-   z(:,t)=[d(:,t+tfinal).^2 ; [0;0;0]];
+   z(:,t)=[d(:,t+tfinal).^2 ; v_ang(:,t+tfinal)];
    %Determina o S 
-   S=H(xp, LANDMARKS)*covp*H(xp, LANDMARKS)' + diag([0.0001 0.0001 0.0001 0 0 0]);
+   S=H(xp, LANDMARKS)*covp*H(xp, LANDMARKS)' + diag([2 2 2 0 0 0]);
    %Calcula o ganho de Kalman
    K=covp*H(xp, LANDMARKS)'*inv(S);
    %Corrige a matriz das covariâncias
@@ -132,9 +132,9 @@ for t=2:1:length(d)-tfinal
    plot(x(9,t),x(10,t),'o', 'MarkerEdgeColor', 'g');   
    plot(x(1,1:t),x(2,1:t),'r');
    
-   legend('Posição atual (EKF)', 'Landmarks Estimadas');
+   legend('Estimated position (EKF)', 'Estimated Landamrks');
    grid on;
-   title(['Espaço de Estados (t=' num2str(t) ')']);
+   title('Final result');
    xlabel('X1');
    ylabel('X2');
    
